@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SYNC — Iluminação Inteligente para Cidades</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'rose-light':  '#EEEEEE',
+            'steel':       '#787A91',
+            'navy':        '#141E61',
+            'night':       '#0F044C',
+          },
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            arial:   ['Arial', 'Helvetica', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --rose-light: #EEEEEE;
+      --steel:      #787A91;
+      --navy:       #141E61;
+      --night:      #0F044C;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #ffffff;
+      color: var(--night);
+      overflow-x: hidden;
+    }
+
+    /* ── MORPHISM ── */
+    .glass {
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.55);
+    }
+    .glass-dark {
+      background: rgba(20,30,97,0.08);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(20,30,97,0.12);
+    }
+
+    /* ── NAVBAR ── */
+    #navbar {
+      transition: box-shadow .3s, background .3s;
+    }
+    #navbar.scrolled {
+      background: rgba(255,255,255,0.85) !important;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 2px 30px rgba(15,4,76,.08);
+    }
+
+    /* ── HAMBURGER ── */
+    .hamburger { cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 5px; width: 28px; height: 28px; }
+    .hamburger span {
+      display: block; height: 2px; border-radius: 2px;
+      background: var(--navy);
+      transition: transform .35s cubic-bezier(.77,0,.18,1), opacity .2s, width .3s;
+      transform-origin: center;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; width: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ── MOBILE MENU ── */
+    #mobile-menu {
+      transform: translateX(100%);
+      transition: transform .4s cubic-bezier(.77,0,.18,1);
+    }
+    #mobile-menu.open { transform: translateX(0); }
+
+    /* ── HERO ── */
+    .hero-bg {
+      position: relative;
+      background: #fff;
+      overflow: hidden;
+    }
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: .18;
+      pointer-events: none;
+      animation: orb-drift 8s ease-in-out infinite alternate;
+    }
+    @keyframes orb-drift {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(30px,-20px) scale(1.08); }
+    }
+
+    /* ── LAMP SVG GLOW ── */
+    .lamp-glow {
+      filter: drop-shadow(0 0 28px rgba(20,30,97,.35)) drop-shadow(0 0 60px rgba(20,30,97,.15));
+      animation: lamp-pulse 3s ease-in-out infinite;
+    }
+    @keyframes lamp-pulse {
+      0%,100% { filter: drop-shadow(0 0 28px rgba(20,30,97,.35)) drop-shadow(0 0 60px rgba(20,30,97,.15)); }
+      50%      { filter: drop-shadow(0 0 44px rgba(20,30,97,.55)) drop-shadow(0 0 90px rgba(20,30,97,.25)); }
+    }
+
+    /* ── ROAD ANIMATION ── */
+    .road-line {
+      animation: road-scroll 1.6s linear infinite;
+    }
+    @keyframes road-scroll {
+      from { stroke-dashoffset: 0; }
+      to   { stroke-dashoffset: -48; }
+    }
+
+    /* ── BEAM SWEEP ── */
+    .beam {
+      transform-origin: top center;
+      animation: beam-sweep 4s ease-in-out infinite alternate;
+      opacity: .22;
+    }
+    @keyframes beam-sweep {
+      from { transform: rotate(-18deg); opacity: .18; }
+      to   { transform: rotate(18deg);  opacity: .28; }
+    }
+
+    /* ── COUNTER ── */
+    .counter-num {
+      font-size: clamp(2.5rem,5vw,4rem);
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1;
+    }
+
+    /* ── CARDS ── */
+    .feature-card {
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s;
+    }
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 24px 60px rgba(15,4,76,.12);
+    }
+
+    /* ── TIMELINE ── */
+    .tl-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--navy);
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 3px var(--navy);
+      flex-shrink: 0;
+    }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(36px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-left {
+      opacity: 0;
+      transform: translateX(-40px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal-left.visible { opacity: 1; transform: translateX(0); }
+    .reveal-right {
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal-right.visible { opacity: 1; transform: translateX(0); }
+
+    /* delay helpers */
+    .delay-100 { transition-delay: .1s; }
+    .delay-200 { transition-delay: .2s; }
+    .delay-300 { transition-delay: .3s; }
+    .delay-400 { transition-delay: .4s; }
+    .delay-500 { transition-delay: .5s; }
+
+    /* ── FLOATING PARTICLES ── */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--navy);
+      opacity: 0;
+      pointer-events: none;
+      animation: float-up linear infinite;
+    }
+    @keyframes float-up {
+      0%   { transform: translateY(0) scale(1); opacity: 0; }
+      10%  { opacity: .25; }
+      90%  { opacity: .12; }
+      100% { transform: translateY(-120px) scale(.4); opacity: 0; }
+    }
+
+    /* ── WAVE DIVIDER ── */
+    .wave { display: block; width: 100%; overflow: hidden; line-height: 0; }
+
+    /* ── TYPEWRITER ── */
+    .typewriter::after {
+      content: '|';
+      animation: blink .7s steps(1) infinite;
+      color: var(--navy);
+    }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ── BUTTON ── */
+    .btn-primary {
+      background: var(--navy);
+      color: #fff;
+      border-radius: 999px;
+      padding: .75rem 2rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,.12);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform .35s ease;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(15,4,76,.28); }
+    .btn-primary:hover::after { transform: scaleX(1); }
+
+    .btn-outline {
+      border: 2px solid var(--navy);
+      color: var(--navy);
+      border-radius: 999px;
+      padding: .7rem 1.9rem;
+      font-weight: 600;
+      transition: background .25s, color .25s, transform .2s;
+    }
+    .btn-outline:hover { background: var(--navy); color: #fff; transform: translateY(-2px); }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: .75rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--steel);
+      font-weight: 600;
+    }
+
+    /* ── ACCORDION ── */
+    .accordion-body { max-height: 0; overflow: hidden; transition: max-height .4s ease, padding .3s; }
+    .accordion-body.open { max-height: 400px; }
+
+    /* ── STAT BAR ── */
+    .stat-bar-fill {
+      height: 100%; border-radius: 999px;
+      background: var(--navy);
+      width: 0;
+      transition: width 1.4s cubic-bezier(.25,1,.5,1);
+    }
+
+    /* ── TAG ── */
+    .tag {
+      display: inline-block;
+      background: var(--rose-light);
+      color: var(--night);
+      border-radius: 999px;
+      padding: .25rem .9rem;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+
+    /* ── CUSTOM SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #fff; }
+    ::-webkit-scrollbar-thumb { background: var(--steel); border-radius: 3px; }
+
+    /* ── NOISE TEXTURE OVERLAY ── */
+    .noise::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      opacity: .4;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════════ -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/70">
+  <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16 lg:h-20">
+    <!-- Logo -->
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--navy)">
+        <i class="fa-solid fa-bolt text-white text-sm"></i>
+      </div>
+      <span class="font-poppins font-800 text-xl tracking-tight" style="color:var(--night); font-weight:800;">SYNC</span>
+    </div>
+
+    <!-- Desktop links -->
+    <ul class="hidden lg:flex items-center gap-8 font-arial text-sm font-medium" style="color:var(--steel)">
+      <li><a href="#sobre" class="hover:text-navy transition-colors duration-200 hover:font-semibold" style="--tw-text-opacity:1">Sobre</a></li>
+      <li><a href="#tecnologia" class="hover:text-navy transition-colors duration-200 hover:font-semibold">Tecnologia</a></li>
+      <li><a href="#arquitetura" class="hover:text-navy transition-colors duration-200 hover:font-semibold">Arquitetura</a></li>
+      <li><a href="#specs" class="hover:text-navy transition-colors duration-200 hover:font-semibold">Specs</a></li>
+      <li><a href="#faq" class="hover:text-navy transition-colors duration-200 hover:font-semibold">FAQ</a></li>
+    </ul>
+
+    <!-- Desktop CTA + hamburger -->
+    <div class="flex items-center gap-4">
+      <a href="#contato" class="hidden lg:inline-block btn-primary text-sm">Saiba Mais</a>
+      <button id="hamburger" class="hamburger lg:hidden" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div id="mobile-menu" class="fixed top-0 right-0 h-full w-72 z-40 glass flex flex-col pt-24 pb-10 px-8 shadow-2xl lg:hidden">
+  <ul class="flex flex-col gap-6 text-base font-semibold font-poppins" style="color:var(--night)">
+    <li><a href="#sobre"       class="mobile-link flex items-center gap-3"><i class="fa-solid fa-circle-info w-5 text-center" style="color:var(--steel)"></i> Sobre</a></li>
+    <li><a href="#tecnologia"  class="mobile-link flex items-center gap-3"><i class="fa-solid fa-microchip w-5 text-center" style="color:var(--steel)"></i> Tecnologia</a></li>
+    <li><a href="#arquitetura" class="mobile-link flex items-center gap-3"><i class="fa-solid fa-sitemap w-5 text-center" style="color:var(--steel)"></i> Arquitetura</a></li>
+    <li><a href="#specs"       class="mobile-link flex items-center gap-3"><i class="fa-solid fa-list-check w-5 text-center" style="color:var(--steel)"></i> Specs</a></li>
+    <li><a href="#faq"         class="mobile-link flex items-center gap-3"><i class="fa-solid fa-circle-question w-5 text-center" style="color:var(--steel)"></i> FAQ</a></li>
+  </ul>
+  <div class="mt-auto">
+    <a href="#contato" class="mobile-link btn-primary block text-center text-sm">Saiba Mais</a>
+  </div>
+</div>
+<div id="menu-overlay" class="fixed inset-0 z-30 bg-night/20 hidden lg:hidden" style="backdrop-filter:blur(2px)"></div>
+
+
+<!-- ═══════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════ -->
+<section class="hero-bg noise min-h-screen flex items-center pt-20" id="inicio">
+  <!-- Orbs -->
+  <div class="hero-orb w-96 h-96 -top-20 -right-20" style="background:var(--navy)"></div>
+  <div class="hero-orb w-64 h-64 bottom-10 left-10 animation-delay-2000" style="background:var(--steel); animation-delay:2s"></div>
+  <div class="hero-orb w-48 h-48 top-1/2 left-1/3" style="background:var(--night); animation-delay:4s; opacity:.1"></div>
+
+  <div class="max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-12 items-center py-20">
+    <!-- Text -->
+    <div>
+      <div class="section-label mb-5 reveal">Grupo S.Y.N.C — Fascens 2026</div>
+      <h1 class="font-poppins font-black leading-[1.08] mb-6 reveal delay-100" style="font-size:clamp(2.6rem,6vw,5rem); color:var(--night)">
+        Iluminação<br>
+        <span class="typewriter" id="typewriter-el">Inteligente</span><br>
+        <span style="color:var(--steel); font-weight:300; font-size:80%">para Smart Cities</span>
+      </h1>
+      <p class="font-arial text-base leading-relaxed mb-8 max-w-lg reveal delay-200" style="color:var(--steel)">
+        O sistema SYNC redefine a iluminação pública com LEDs adaptativos que reagem em tempo real à presença de pedestres e veículos — eliminando desperdício e elevando a segurança urbana.
+      </p>
+      <div class="flex flex-wrap gap-4 reveal delay-300">
+        <a href="#tecnologia" class="btn-primary flex items-center gap-2">
+          <i class="fa-solid fa-bolt"></i> Descobrir Tecnologia
+        </a>
+        <a href="#specs" class="btn-outline flex items-center gap-2">
+          <i class="fa-solid fa-file-lines"></i> Ver Specs
+        </a>
+      </div>
+      <!-- Stats row -->
+      <div class="flex gap-8 mt-12 reveal delay-400">
+        <div>
+          <div class="counter-num" data-target="70" data-suffix="%">0%</div>
+          <div class="font-arial text-xs mt-1" style="color:var(--steel)">Redução de consumo</div>
+        </div>
+        <div class="w-px" style="background:var(--rose-light)"></div>
+        <div>
+          <div class="counter-num" data-target="360" data-suffix="°">0°</div>
+          <div class="font-arial text-xs mt-1" style="color:var(--steel)">Detecção Doppler</div>
+        </div>
+        <div class="w-px" style="background:var(--rose-light)"></div>
+        <div>
+          <div class="counter-num" data-target="10" data-suffix="%">0%</div>
+          <div class="font-arial text-xs mt-1" style="color:var(--steel)">Brilho residual</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero Illustration -->
+    <div class="flex justify-center lg:justify-end reveal-right">
+      <div class="relative w-72 h-72 lg:w-96 lg:h-96">
+        <!-- Particles -->
+        <div id="particles-container" class="absolute inset-0 overflow-hidden rounded-full"></div>
+
+        <!-- Morphism circle bg -->
+        <div class="absolute inset-0 rounded-full glass-dark"></div>
+
+        <!-- SVG Lamp Scene -->
+        <svg viewBox="0 0 320 320" class="relative w-full h-full lamp-glow" xmlns="http://www.w3.org/2000/svg">
+          <!-- Sky / Road -->
+          <circle cx="160" cy="160" r="148" fill="white" fill-opacity=".0"/>
+
+          <!-- Road -->
+          <rect x="60" y="220" width="200" height="50" rx="6" fill="#EEEEEE"/>
+          <!-- Road dashes -->
+          <line x1="160" y1="220" x2="160" y2="270" stroke="white" stroke-width="4" stroke-dasharray="12 10" class="road-line" style="stroke-dashoffset:0"/>
+
+          <!-- Pole -->
+          <rect x="156" y="100" width="8" height="120" rx="4" fill="#787A91"/>
+          <!-- Arm -->
+          <path d="M 160 108 Q 175 95 190 95" stroke="#787A91" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+          <!-- Lamp body -->
+          <rect x="178" y="85" width="26" height="14" rx="5" fill="#141E61"/>
+          <!-- LED glow -->
+          <ellipse cx="191" cy="99" rx="16" ry="6" fill="#141E61" opacity=".8"/>
+
+          <!-- Beam trapezoid -->
+          <polygon points="185,100 197,100 220,200 162,200" fill="#141E61" class="beam"/>
+
+          <!-- Sensor waves -->
+          <circle cx="191" cy="92" r="12" stroke="#0F044C" stroke-width="1.5" fill="none" opacity=".5">
+            <animate attributeName="r" from="10" to="22" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" from=".5" to="0" dur="2s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="191" cy="92" r="10" stroke="#0F044C" stroke-width="1.5" fill="none" opacity=".5">
+            <animate attributeName="r" from="10" to="22" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" from=".5" to="0" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+          </circle>
+
+          <!-- Pedestrian silhouette -->
+          <circle cx="130" cy="210" r="7" fill="#787A91"/>
+          <rect x="126" cy="218" width="8" height="16" rx="4" fill="#787A91" y="218"/>
+
+          <!-- Car silhouette -->
+          <rect x="200" y="225" width="40" height="18" rx="5" fill="#141E61" opacity=".7"/>
+          <circle cx="207" cy="243" r="4" fill="#0F044C"/>
+          <circle cx="233" cy="243" r="4" fill="#0F044C"/>
+          <!-- Headlights -->
+          <circle cx="240" cy="232" r="3" fill="#EEEEEE"/>
+          <circle cx="240" cy="239" r="2" fill="#EEEEEE" opacity=".6"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wave bottom -->
+  <div class="absolute bottom-0 left-0 right-0 wave">
+    <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M0,40 C360,60 1080,20 1440,40 L1440,60 L0,60 Z" fill="#EEEEEE" opacity=".6"/>
+    </svg>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     SOBRE
+═══════════════════════════════════════════ -->
+<section id="sobre" class="py-24 bg-white">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-16">
+      <div class="section-label reveal mb-3">O Projeto</div>
+      <h2 class="font-poppins font-black text-4xl lg:text-5xl reveal delay-100" style="color:var(--night)">Além do Simples<br><span style="color:var(--steel); font-weight:300">Acender e Apagar</span></h2>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+      <!-- Card 1 -->
+      <div class="feature-card glass-dark rounded-3xl p-8 reveal delay-100">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-5" style="background:var(--night)">
+          <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+        </div>
+        <h3 class="font-poppins font-bold text-xl mb-3" style="color:var(--night)">Envelope de Segurança</h3>
+        <p class="font-arial text-sm leading-relaxed" style="color:var(--steel)">O sistema aciona luminárias à frente e mantém a retaguarda acesa, garantindo que o usuário nunca caminhe em direção ao escuro.</p>
+        <div class="mt-5 tag"><i class="fa-solid fa-check-circle mr-1"></i> Preditivo</div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="feature-card glass-dark rounded-3xl p-8 reveal delay-200">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-5" style="background:var(--navy)">
+          <i class="fa-solid fa-wave-square text-white text-lg"></i>
+        </div>
+        <h3 class="font-poppins font-bold text-xl mb-3" style="color:var(--night)">Dimming via PWM</h3>
+        <p class="font-arial text-sm leading-relaxed" style="color:var(--steel)">Transições imperceptíveis de luminosidade por modulação de largura de pulso. Zero flicker, máximo conforto visual e economia de energia.</p>
+        <div class="mt-5 tag"><i class="fa-solid fa-check-circle mr-1"></i> Suave</div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="feature-card glass-dark rounded-3xl p-8 reveal delay-300">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-5" style="background:var(--steel)">
+          <i class="fa-solid fa-users text-white text-lg"></i>
+        </div>
+        <h3 class="font-poppins font-bold text-xl mb-3" style="color:var(--night)">Múltiplos Usuários</h3>
+        <p class="font-arial text-sm leading-relaxed" style="color:var(--steel)">Lógica de prioridade de valor máximo: em fluxos concorrentes, prevalece sempre a maior demanda de brilho. Segurança garantida em qualquer cenário.</p>
+        <div class="mt-5 tag"><i class="fa-solid fa-check-circle mr-1"></i> Inteligente</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     TECNOLOGIA
+═══════════════════════════════════════════ -->
+<section id="tecnologia" class="py-24" style="background:var(--rose-light)">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+      <div class="reveal-left">
+        <div class="section-label mb-3">Detecção Avançada</div>
+        <h2 class="font-poppins font-black text-4xl lg:text-5xl mb-6" style="color:var(--night)">Sensor<br><span style="color:var(--steel); font-weight:300">RCWL-0516</span></h2>
+        <p class="font-arial text-sm leading-relaxed mb-8" style="color:var(--steel)">Ao contrário de sensores infravermelhos, o módulo de micro-ondas Doppler RCWL-0516 detecta presença em 360° sem linha de visada — funcionando através de paredes e em qualquer condição climática.</p>
+
+        <!-- Stat bars -->
+        <div class="space-y-5">
+          <div>
+            <div class="flex justify-between text-xs font-semibold mb-2 font-poppins" style="color:var(--night)">
+              <span>Alcance de Detecção</span><span>7 metros</span>
+            </div>
+            <div class="h-2 rounded-full" style="background:rgba(120,122,145,.2)">
+              <div class="stat-bar-fill" data-width="88"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs font-semibold mb-2 font-poppins" style="color:var(--night)">
+              <span>Cobertura Angular</span><span>360°</span>
+            </div>
+            <div class="h-2 rounded-full" style="background:rgba(120,122,145,.2)">
+              <div class="stat-bar-fill" data-width="100"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs font-semibold mb-2 font-poppins" style="color:var(--night)">
+              <span>Redução Energética Estimada</span><span>70%</span>
+            </div>
+            <div class="h-2 rounded-full" style="background:rgba(120,122,145,.2)">
+              <div class="stat-bar-fill" data-width="70"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs font-semibold mb-2 font-poppins" style="color:var(--night)">
+              <span>Brilho residual (modo vigilância)</span><span>10%</span>
+            </div>
+            <div class="h-2 rounded-full" style="background:rgba(120,122,145,.2)">
+              <div class="stat-bar-fill" data-width="10"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tech grid -->
+      <div class="grid grid-cols-2 gap-5 reveal-right">
+        <div class="col-span-2 glass rounded-3xl p-6 flex items-start gap-4">
+          <i class="fa-solid fa-microchip text-2xl mt-1" style="color:var(--navy)"></i>
+          <div>
+            <div class="font-poppins font-bold text-base mb-1" style="color:var(--night)">Arduino Nano / Uno</div>
+            <div class="font-arial text-xs leading-relaxed" style="color:var(--steel)">Unidade central de processamento gerenciando toda a lógica de decisão e o barramento I/O expandido dos nós da rede.</div>
+          </div>
+        </div>
+        <div class="glass rounded-3xl p-6 flex flex-col gap-3">
+          <i class="fa-solid fa-plug text-xl" style="color:var(--navy)"></i>
+          <div class="font-poppins font-semibold text-sm" style="color:var(--night)">ULN2003 / IRF520</div>
+          <div class="font-arial text-xs" style="color:var(--steel)">Drivers de potência isolando lógica e carga elétrica.</div>
+        </div>
+        <div class="glass rounded-3xl p-6 flex flex-col gap-3">
+          <i class="fa-solid fa-sliders text-xl" style="color:var(--navy)"></i>
+          <div class="font-poppins font-semibold text-sm" style="color:var(--night)">PWM Dimming</div>
+          <div class="font-arial text-xs" style="color:var(--steel)">Controle de luminosidade fluido e imperceptível aos olhos.</div>
+        </div>
+        <div class="col-span-2 glass rounded-3xl p-6 flex items-start gap-4">
+          <i class="fa-solid fa-tower-broadcast text-2xl mt-1" style="color:var(--navy)"></i>
+          <div>
+            <div class="font-poppins font-bold text-base mb-1" style="color:var(--night)">Comunicação em Rede</div>
+            <div class="font-arial text-xs leading-relaxed" style="color:var(--steel)">Sensores Doppler monitorados em tempo real via barramento central, executando matriz de decisão para cada nó da via.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     ARQUITETURA / TIMELINE
+═══════════════════════════════════════════ -->
+<section id="arquitetura" class="py-24 bg-white">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-16">
+      <div class="section-label reveal mb-3">Como Funciona</div>
+      <h2 class="font-poppins font-black text-4xl lg:text-5xl reveal delay-100" style="color:var(--night)">Dinâmica do<br><span style="color:var(--steel); font-weight:300">Envelope de Segurança</span></h2>
+    </div>
+
+    <div class="max-w-3xl mx-auto">
+      <!-- Step 1 -->
+      <div class="flex gap-6 mb-10 reveal">
+        <div class="flex flex-col items-center">
+          <div class="tl-dot"></div>
+          <div class="w-px flex-1 mt-2" style="background:var(--rose-light)"></div>
+        </div>
+        <div class="glass-dark rounded-3xl p-6 mb-10 flex-1">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-bold" style="background:var(--navy)">1</div>
+            <h3 class="font-poppins font-bold text-lg" style="color:var(--night)">Antecipação</h3>
+          </div>
+          <p class="font-arial text-sm leading-relaxed" style="color:var(--steel)">Ao detectar um alvo, o sistema aciona a luminária local e as duas subsequentes no sentido do fluxo. O usuário sempre caminha em direção a uma área já iluminada.</p>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="flex gap-6 mb-10 reveal delay-100">
+        <div class="flex flex-col items-center">
+          <div class="tl-dot"></div>
+          <div class="w-px flex-1 mt-2" style="background:var(--rose-light)"></div>
+        </div>
+        <div class="glass-dark rounded-3xl p-6 mb-10 flex-1">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-bold" style="background:var(--navy)">2</div>
+            <h3 class="font-poppins font-bold text-lg" style="color:var(--night)">Tail Fade (Retaguarda)</h3>
+          </div>
+          <p class="font-arial text-sm leading-relaxed" style="color:var(--steel)">O poste anterior à posição do usuário permanece aceso em nível intermediário via PWM. Nenhum ponto cego atrás — a luz suaviza, não apaga.</p>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="flex gap-6 mb-10 reveal delay-200">
+        <div class="flex flex-col items-center">
+          <div class="tl-dot"></div>
+          <div class="w-px flex-1 mt-2" style="background:var(--rose-light)"></div>
+        </div>
+        <div class="glass-dark rounded-3xl p-6 mb-10 flex-1">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-bold" style="background:var(--navy)">3</div>
+            <h3 class="font-poppins font-bold text-lg" style="color:var(--night)">Iluminação Residual</h3>
+          </div>
+          <p class="font-arial text-sm leading-relaxed" style="color:var(--steel)">Em modo de vacância, o brilho cai a 10%. Vigilância por câmeras mantida, percepção de segurança preservada — nunca desligamento total.</p>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="flex gap-6 reveal delay-300">
+        <div class="flex flex-col items-center">
+          <div class="tl-dot"></div>
+        </div>
+        <div class="glass-dark rounded-3xl p-6 flex-1">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-bold" style="background:var(--night)">4</div>
+            <h3 class="font-poppins font-bold text-lg" style="color:var(--night)">Prioridade de Valor Máximo</h3>
+          </div>
+          <p class="font-arial text-sm leading-relaxed" style="color:var(--steel)">Múltiplos usuários simultâneos? O algoritmo compara todas as demandas e mantém o maior brilho requisitado. Retorno à economia só após expiração de todos os timers ativos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     SPECS
+═══════════════════════════════════════════ -->
+<section id="specs" class="py-24" style="background:var(--night)">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="text-center mb-16">
+      <div class="section-label reveal mb-3" style="color:var(--steel)">Especificações</div>
+      <h2 class="font-poppins font-black text-4xl lg:text-5xl reveal delay-100 text-white">Protótipo<br><span style="color:var(--steel); font-weight:300">Arduino</span></h2>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="rounded-3xl p-6 reveal delay-100" style="background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08)">
+        <i class="fa-brands fa-arduino text-3xl mb-4" style="color:#787A91"></i>
+        <div class="font-poppins font-bold text-white text-lg mb-1">Microcontrolador</div>
+        <div class="font-arial text-sm" style="color:var(--steel)">Arduino Nano / Uno — unidade de processamento central</div>
+      </div>
+      <div class="rounded-3xl p-6 reveal delay-200" style="background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08)">
+        <i class="fa-solid fa-satellite-dish text-3xl mb-4" style="color:#787A91"></i>
+        <div class="font-poppins font-bold text-white text-lg mb-1">Sensor</div>
+        <div class="font-arial text-sm" style="color:var(--steel)">RCWL-0516 — Micro-ondas Doppler, 360°, longo alcance</div>
+      </div>
+      <div class="rounded-3xl p-6 reveal delay-300" style="background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08)">
+        <i class="fa-solid fa-bolt-lightning text-3xl mb-4" style="color:#787A91"></i>
+        <div class="font-poppins font-bold text-white text-lg mb-1">Interface de Potência</div>
+        <div class="font-arial text-sm" style="color:var(--steel)">ULN2003 ou MOSFETs IRF520 — isolamento lógica/carga</div>
+      </div>
+      <div class="rounded-3xl p-6 reveal delay-400" style="background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08)">
+        <i class="fa-solid fa-gauge-high text-3xl mb-4" style="color:#787A91"></i>
+        <div class="font-poppins font-bold text-white text-lg mb-1">Controle</div>
+        <div class="font-arial text-sm" style="color:var(--steel)">PWM Dimming — transições fluidas e imperceptíveis</div>
+      </div>
+    </div>
+
+    <!-- Architecture badge -->
+    <div class="mt-10 reveal delay-300 rounded-3xl p-8 flex flex-col lg:flex-row items-center gap-6" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07)">
+      <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:var(--navy)">
+        <i class="fa-solid fa-diagram-project text-white text-2xl"></i>
+      </div>
+      <div>
+        <div class="font-poppins font-bold text-white text-xl mb-2">Arquitetura Centralizada</div>
+        <p class="font-arial text-sm leading-relaxed" style="color:var(--steel)">Toda a inteligência concentrada no microcontrolador Arduino via barramento I/O expandido. O Arduino gerencia apenas sinais de baixa potência, enquanto os drivers de potência suportam a carga elétrica das lâmpadas — garantindo integridade do microcontrolador e escalabilidade da rede.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     FAQ
+═══════════════════════════════════════════ -->
+<section id="faq" class="py-24 bg-white">
+  <div class="max-w-3xl mx-auto px-6">
+    <div class="text-center mb-16">
+      <div class="section-label reveal mb-3">Dúvidas Frequentes</div>
+      <h2 class="font-poppins font-black text-4xl lg:text-5xl reveal delay-100" style="color:var(--night)">FAQ</h2>
+    </div>
+
+    <div id="faq-list" class="space-y-4">
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     CTA / CONTATO
+═══════════════════════════════════════════ -->
+<section id="contato" class="py-24" style="background:var(--rose-light)">
+  <div class="max-w-7xl mx-auto px-6 text-center">
+    <div class="section-label reveal mb-4">Grupo S.Y.N.C</div>
+    <h2 class="font-poppins font-black text-4xl lg:text-6xl mb-6 reveal delay-100" style="color:var(--night)">Prontos para<br><span style="color:var(--steel); font-weight:300">Iluminar sua Cidade</span></h2>
+    <p class="font-arial text-base max-w-xl mx-auto mb-10 reveal delay-200" style="color:var(--steel)">
+      Um projeto acadêmico da Fascens (1S2026) que demonstra como tecnologia acessível pode transformar infraestruturas críticas urbanas de forma resiliente e centrada no cidadão.
+    </p>
+    <div class="flex flex-wrap gap-4 justify-center reveal delay-300">
+      <a href="mailto:sync@fascens.edu.br" class="btn-primary flex items-center gap-2">
+        <i class="fa-solid fa-envelope"></i> Entrar em Contato
+      </a>
+      <a href="#inicio" class="btn-outline flex items-center gap-2">
+        <i class="fa-solid fa-arrow-up"></i> Voltar ao topo
+      </a>
+    </div>
+
+    <!-- Team chips -->
+    <div class="flex flex-wrap gap-3 justify-center mt-14 reveal delay-400">
+      <span class="tag"><i class="fa-solid fa-user mr-1"></i> Grupo S.Y.N.C</span>
+      <span class="tag"><i class="fa-solid fa-school mr-1"></i> Fascens 2026</span>
+      <span class="tag"><i class="fa-solid fa-lightbulb mr-1"></i> Smart Cities</span>
+      <span class="tag"><i class="fa-solid fa-leaf mr-1"></i> Sustentável</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
+<footer class="py-8 bg-white border-t" style="border-color:var(--rose-light)">
+  <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:var(--navy)">
+        <i class="fa-solid fa-bolt text-white text-xs"></i>
+      </div>
+      <span class="font-poppins font-black" style="color:var(--night)">SYNC</span>
+    </div>
+    <p class="font-arial text-xs" style="color:var(--steel)">© 2026 Grupo S.Y.N.C — Fascens. Projeto acadêmico de Iluminação Smart.</p>
+    <div class="flex gap-4" style="color:var(--steel)">
+      <a href="#" class="hover:text-navy transition-colors"><i class="fa-brands fa-github text-lg"></i></a>
+      <a href="#" class="hover:text-navy transition-colors"><i class="fa-brands fa-linkedin text-lg"></i></a>
+      <a href="#" class="hover:text-navy transition-colors"><i class="fa-solid fa-envelope text-lg"></i></a>
+    </div>
+  </div>
+</footer>
+
+
+<script>
+  /* ── HAMBURGER ── */
+  const hamburger    = document.getElementById('hamburger');
+  const mobileMenu   = document.getElementById('mobile-menu');
+  const menuOverlay  = document.getElementById('menu-overlay');
+
+  function toggleMenu(open) {
+    hamburger.classList.toggle('open', open);
+    mobileMenu.classList.toggle('open', open);
+    menuOverlay.classList.toggle('hidden', !open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
+  hamburger.addEventListener('click', () => toggleMenu(!mobileMenu.classList.contains('open')));
+  menuOverlay.addEventListener('click', () => toggleMenu(false));
+
+  document.querySelectorAll('.mobile-link').forEach(link => {
+    link.addEventListener('click', () => toggleMenu(false));
+  });
+
+  /* ── NAVBAR SCROLL ── */
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive: true });
+
+  /* ── SCROLL REVEAL ── */
+  const revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  revealEls.forEach(el => revealObserver.observe(el));
+
+  /* ── COUNTERS ── */
+  function animateCounter(el, target, suffix) {
+    const duration = 1800;
+    const start = performance.now();
+    const update = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const val = Math.round(ease * target);
+      el.textContent = val + suffix;
+      if (progress < 1) requestAnimationFrame(update);
+    };
+    requestAnimationFrame(update);
+  }
+
+  const counterEls = document.querySelectorAll('[data-target]');
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        animateCounter(el, +el.dataset.target, el.dataset.suffix);
+        counterObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  counterEls.forEach(el => counterObserver.observe(el));
+
+  /* ── STAT BARS ── */
+  const barObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const fill = entry.target;
+        fill.style.width = fill.dataset.width + '%';
+        barObserver.unobserve(fill);
+      }
+    });
+  }, { threshold: 0.4 });
+  document.querySelectorAll('.stat-bar-fill').forEach(el => barObserver.observe(el));
+
+  /* ── TYPEWRITER ── */
+  const words = ['Inteligente', 'Preditiva', 'Eficiente', 'Segura', 'Adaptativa'];
+  let wi = 0, ci = 0, deleting = false;
+  const twEl = document.getElementById('typewriter-el');
+
+  function typeLoop() {
+    const word = words[wi];
+    if (!deleting) {
+      twEl.textContent = word.slice(0, ++ci);
+      if (ci === word.length) { deleting = true; setTimeout(typeLoop, 1800); return; }
+    } else {
+      twEl.textContent = word.slice(0, --ci);
+      if (ci === 0) { deleting = false; wi = (wi + 1) % words.length; }
+    }
+    setTimeout(typeLoop, deleting ? 55 : 90);
+  }
+  setTimeout(typeLoop, 1200);
+
+  /* ── FAQ ── */
+  const faqs = [
+    {
+      q: 'Como o sistema detecta pedestres e veículos?',
+      a: 'Utilizamos o sensor RCWL-0516, baseado em micro-ondas Doppler. Ele oferece detecção omnidirecional de 360° sem necessidade de linha de visada, com alcance de até 7 metros e imunidade a condições climáticas adversas.'
+    },
+    {
+      q: 'O que acontece quando há múltiplos usuários simultâneos?',
+      a: 'O algoritmo de Prioridade de Valor Máximo entra em ação: o Arduino processa todos os sensores em paralelo e mantém o maior nível de brilho requisitado. O retorno à economia só ocorre após a expiração de todos os timers de presença ativos.'
+    },
+    {
+      q: 'A luz apaga completamente quando não há ninguém?',
+      a: 'Não. O sistema mantém 10% de brilho residual (modo Background) para preservar a vigilância por câmeras e a percepção de segurança pelos cidadãos. O desligamento total nunca é executado.'
+    },
+    {
+      q: 'Qual é a arquitetura de controle utilizada?',
+      a: 'Arquitetura centralizada: toda a inteligência está no Arduino, que gerencia o barramento I/O expandido. Drivers de potência (ULN2003 ou IRF520) isolam a lógica da carga elétrica, protegendo o microcontrolador.'
+    },
+    {
+      q: 'O protótipo é escalável para cidades reais?',
+      a: 'Sim. A lógica modular do Envelope de Segurança e o tratamento de demandas concorrentes foram projetados para escalar. O protótipo em Arduino demonstra o conceito que pode ser reimplementado em hardware industrial de maior potência.'
+    },
+  ];
+
+  const faqList = document.getElementById('faq-list');
+  faqs.forEach((item, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'glass-dark rounded-2xl overflow-hidden reveal';
+    if (i > 0) wrapper.classList.add('delay-' + (i * 100 > 400 ? 400 : i * 100));
+
+    const btn = document.createElement('button');
+    btn.className = 'w-full flex items-center justify-between px-6 py-5 text-left gap-4';
+
+    const qText = document.createElement('span');
+    qText.className = 'font-poppins font-semibold text-sm';
+    qText.style.color = 'var(--night)';
+    qText.textContent = item.q;
+
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid fa-chevron-down flex-shrink-0 transition-transform duration-300';
+    icon.style.color = 'var(--steel)';
+
+    btn.appendChild(qText);
+    btn.appendChild(icon);
+
+    const body = document.createElement('div');
+    body.className = 'accordion-body px-6 font-arial text-sm leading-relaxed';
+    body.style.color = 'var(--steel)';
+    body.style.paddingBottom = '0';
+
+    const p = document.createElement('p');
+    p.textContent = item.a;
+    body.appendChild(p);
+
+    btn.addEventListener('click', () => {
+      const isOpen = body.classList.contains('open');
+      document.querySelectorAll('.accordion-body.open').forEach(b => {
+        b.classList.remove('open');
+        b.style.paddingBottom = '0';
+        b.previousSibling && b.previousSibling.querySelector && b.previousSibling.querySelector('i') &&
+          (b.previousSibling.querySelector('i').style.transform = '');
+      });
+      if (!isOpen) {
+        body.classList.add('open');
+        body.style.paddingBottom = '1.25rem';
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        icon.style.transform = '';
+      }
+    });
+
+    wrapper.appendChild(btn);
+    wrapper.appendChild(body);
+    faqList.appendChild(wrapper);
+  });
+
+  /* ── FLOATING PARTICLES ── */
+  const container = document.getElementById('particles-container');
+  for (let i = 0; i < 14; i++) {
+    const p = document.createElement('div');
+    const size = Math.random() * 5 + 2;
+    p.className = 'particle';
+    p.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random() * 100}%;
+      bottom:${Math.random() * 40}%;
+      animation-duration:${3 + Math.random() * 4}s;
+      animation-delay:${Math.random() * 5}s;
+    `;
+    container.appendChild(p);
+  }
+
+  /* ── SMOOTH ACTIVE NAV ── */
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a[href^="#"]');
+
+  const activeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => {
+          const active = l.getAttribute('href') === '#' + entry.target.id;
+          l.style.color = active ? 'var(--navy)' : '';
+          l.style.fontWeight = active ? '700' : '';
+        });
+      }
+    });
+  }, { threshold: 0.4 });
+
+  sections.forEach(s => activeObserver.observe(s));
+</script>
+</body>
+</html>
