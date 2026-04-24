@@ -1,0 +1,35 @@
+int led = 9;
+int ldr = A0;
+int pir = 2;
+
+void setup() {
+  pinMode(led, OUTPUT);
+  pinMode(pir, INPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  int luz = analogRead(ldr);     // 0 a 1023
+  int movimento = digitalRead(pir);
+
+  Serial.print("LDR: ");
+  Serial.print(luz);
+  Serial.print(" | PIR: ");
+  Serial.println(movimento);
+
+  // Ajuste esse valor no Tinkercad depois
+  if (luz > 600) { // CLARO = DIA
+    analogWrite(led, 0);
+  } 
+  else { // ESCURO = NOITE
+    
+    if (movimento == HIGH) {
+      analogWrite(led, 255); // 100%
+    } else {
+      analogWrite(led, 50);  // ~20%
+    }
+  }
+
+  delay(200);
+}
